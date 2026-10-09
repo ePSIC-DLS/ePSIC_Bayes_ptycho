@@ -1,0 +1,519 @@
+PtyREX Bayesian Optimisation Workflow
+=====================================
+
+Purpose
+-------
+
+This document describes the complete operational workflow for running
+Bayesian optimisation campaigns using the PtyREX crystallographic
+optimisation framework.
+
+The workflow supports:
+
+    - manual optimisation
+    - automated optimisation
+    - safe stopping
+    - campaign recovery
+    - convergence handling
+
+The framework is designed so that optimiser state can always be
+recovered safely after notebook interruption, cluster failures or
+user termination.
+
+
+Campaign State Machine
+----------------------
+
+The campaign progresses through the following states:
+
+    evaluated
+        |
+        v
+    proposed
+        |
+        v
+    prepared
+        |
+        v
+    submitted
+        |
+        v
+    completed_pending_evaluation
+        |
+        v
+    evaluated
+
+Terminal state:
+
+    converged
+
+State descriptions:
+
+evaluated
+
+    No active batch exists.
+    Optimiser has already received results.
+    Safe to generate a new proposal.
+
+proposed
+
+    New optimiser suggestions have been generated.
+    No reconstruction files exist yet.
+    No jobs have been submitted.
+
+prepared
+
+    JSON files exist.
+    Manifest exists.
+    SLURM script exists.
+    Nothing has yet been submitted.
+
+submitted
+
+    Jobs have been submitted to SLURM.
+
+completed_pending_evaluation
+
+    Jobs have finished.
+    Results have not yet been passed to the optimiser.
+
+converged
+
+    No useful new optimisation points remain.
+
+
+Manual Workflow
+---------------
+
+Step 1
+Review campaign health.
+
+Run:
+
+    campaign.doctor()
+
+and
+
+    campaign.next_action()
+
+These functions perform safety checks and indicate the recommended
+next workflow operation.
+
+
+Step 2
+Generate a proposal.
+
+Run:
+
+    proposal = campaign.propose_next_batch()
+
+This:
+
+    - queries the Bayesian optimiser
+    - applies spacing constraints
+    - stores proposal information
+    - updates campaign state
+
+No files are generated.
+
+No jobs are submitted.
+
+
+Step 3
+Prepare configuration files.
+
+Run:
+
+    campaign.prepare_proposed_batch()
+
+This:
+
+    - allocates trial numbers
+    - creates reconstruction directories
+    - creates configuration JSON files
+    - creates manifest file
+    - creates SLURM launch script
+
+Campaign status becomes:
+
+    prepared
+
+
+Step 4
+Review generated files.
+
+Check:
+
+    configs/
+    manifest
+    SLURM script
+
+Verify:
+
+    parameter values
+    save locations
+    reconstruction settings
+    template modifications
+
+
+Step 5
+Submit jobs.
+
+Run:
+
+    campaign.submit_prepared_batch()
+
+This submits a SLURM array.
+
+Campaign status becomes:
+
+    submitted
+
+
+Step 6
+Monitor execution.
+
+Run:
+
+    campaign.monitor_submitted_batch()
+
+This:
+
+    - monitors SLURM queue
+    - waits for completion
+    - checks accounting output
+
+Campaign status becomes:
+
+    completed_pending_evaluation
+
+
+Step 7
+Evaluate results.
+
+Run:
+
+    campaign.evaluate_completed_batch()
+
+This:
+
+    - loads reconstruction outputs
+    - evaluates Fourier-space quality
+    - computes crystallographic metrics
+    - updates diagnostics CSV
+    - updates trial JSON records
+    - performs optimizer.tell()
+    - stores optimiser state
+
+Campaign status returns to:
+
+    evaluated
+
+
+Step 8
+Review results.
+
+Run:
+
+    campaign.review_last_iteration()
+
+and
+
+    campaign.show_campaign_optimum()
+
+to inspect optimisation progress.
+
+
+Automated Workflow
+------------------
+
+The framework can perform multiple optimisation loops automatically.
+
+Run:
+
+    campaign.run_automated_loops(
+        n_loops=5
+    )
+
+Each loop performs:
+
+    propose
+    prepare
+    submit
+    monitor
+    evaluate
+
+automatically.
+
+
+Automated Dashboard
+-------------------
+
+During automated execution the framework displays:
+
+    - optimisation history
+    - current best score
+    - optimum reconstruction
+    - Fourier power spectrum
+    - radial profile
+    - probe diagnostics
+
+Dashboard updates occur:
+
+    before proposal generation
+    after each evaluation
+    during loop execution
+
+
+Safe Stopping
+-------------
+
+Method 1
+Before submission.
+
+During countdown:
+
+    Kernel -> Interrupt
+
+or
+
+    Ctrl+C
+
+Result:
+
+    No jobs submitted.
+    Campaign state remains safe.
+
+
+Method 2
+After current submitted batch.
+
+Run:
+
+    campaign.request_stop()
+
+or
+
+    touch STOP_AFTER_CURRENT_ITERATION
+
+Result:
+
+    Current SLURM jobs continue.
+    Evaluation completes.
+    Optimiser updates.
+    Workflow exits safely.
+
+
+Method 3
+Automatic convergence stop.
+
+The workflow exits automatically when convergence is detected.
+
+
+Recovery
+--------
+
+The framework persists state automatically.
+
+Important files:
+
+    optimizer.pkl
+
+    campaign_state.json
+
+    crystal_metric_diagnostics.csv
+
+Recovery procedure:
+
+    campaign.current_state_summary()
+
+then
+
+    campaign.next_action()
+
+These functions determine the correct continuation point.
+
+
+Example recovery situations
+---------------------------
+
+Notebook closed during submission
+
+Status:
+
+    submitted
+
+Recovery:
+
+    campaign.monitor_submitted_batch()
+
+
+Notebook closed after completion
+
+Status:
+
+    completed_pending_evaluation
+
+Recovery:
+
+    campaign.evaluate_completed_batch()
+
+
+Notebook closed after evaluation
+
+Status:
+
+    evaluated
+
+Recovery:
+
+    campaign.propose_next_batch()
+
+
+Convergence Logic
+-----------------
+
+Current convergence rule:
+
+    MIN_ACCEPTABLE_BATCH_FRACTION = 0.5
+
+and
+
+    minimum_points_required =
+        ceil(
+            BATCH_SIZE
+            *
+            MIN_ACCEPTABLE_BATCH_FRACTION
+        )
+
+A batch is considered converged when:
+
+    accepted_points
+        <
+    minimum_points_required
+
+Example:
+
+    BATCH_SIZE = 4
+
+Behaviour:
+
+    0 points -> converged
+    1 point  -> converged
+    2 points -> continue
+    3 points -> continue
+    4 points -> continue
+
+
+Metric Evaluation Workflow
+--------------------------
+
+Each reconstruction is evaluated using:
+
+    reconstruction
+        ->
+    Fourier transform
+        ->
+    radial peak detection
+        ->
+    azimuthal peak detection
+        ->
+    symmetry-family matching
+        ->
+    peak fitting
+        ->
+    fit validation
+        ->
+    crystallographic scoring
+
+Current optimisation objective:
+
+    symmetry_weighted_score
+
+Loss supplied to Bayesian optimiser:
+
+    loss = -symmetry_weighted_score
+
+
+Output Files
+------------
+
+results/
+
+    campaign_state.json
+
+        Current workflow state.
+
+    optimizer.pkl
+
+        Bayesian optimiser model.
+
+    crystal_metric_diagnostics.csv
+
+        Trial history.
+
+    json/
+
+        Per-trial diagnostics.
+
+
+Per Trial Outputs
+-----------------
+
+Each successful trial generates:
+
+    trial_NNN_metrics.json
+
+containing:
+
+    objective
+    q0
+    symmetry score
+    sharpness score
+    integrated intensity
+    fit quality
+    diagnostic metadata
+
+
+Operational Safety Functions
+----------------------------
+
+Health check:
+
+    campaign.doctor()
+
+Recommended next action:
+
+    campaign.next_action()
+
+Safe proposal reset:
+
+    campaign.reset_proposal()
+
+Request stop:
+
+    campaign.request_stop()
+
+Clear stop request:
+
+    campaign.clear_stop_request()
+
+
+Current Recommended Usage
+-------------------------
+
+For new parameter studies:
+
+    1. Optimise one parameter only.
+    2. Run until convergence.
+    3. Store optimum parameter.
+    4. Fix optimum parameter.
+    5. Optimise next parameter.
+
+Current demonstrated parameters:
+
+    defocus
+    rotation
+    dR
+
+Multi-parameter Bayesian optimisation is not yet recommended.
