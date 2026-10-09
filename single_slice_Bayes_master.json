@@ -1,0 +1,171 @@
+{
+    "base_dir": "/dls/science/groups/imaging/ePSIC_ptychography/experimental_data/80kV_Graphene/",
+    "experiment": {
+        "data": {
+            "data_key": "",
+            "data_path": "/dls/science/groups/imaging/ePSIC_ptychography/experimental_data/80kV_Graphene/20200130_163208.h5",
+            "dead_pixel_flag": 1,
+            "dead_pixel_path": "/dls/science/groups/e02/Merlin_Medipix/4R/Reconstruction_masks/Merlin_bin4.h5",
+            "flat_field_flag": 0,
+            "flat_field_path": "None",
+            "load_flag": 1,
+            "meta_type": "hdf"
+        },
+        "detector": {
+            "position": [
+                0,
+                0,
+                0.1732
+            ]
+        },
+        "experiment_ID": "80keV_600C",
+        "optics": {
+            "lens": {
+                "alpha": 0.06348,
+                "defocus": [
+                    -0.75000000000000002e-08,
+                    -0.75000000000000002e-08
+                ],
+                "use": 1
+            }
+        },
+        "sample": {
+            "position": [
+                0,
+                0,
+                0
+            ]
+        }
+    },
+    "process": {
+        "PIE": {
+            "MultiSlice": {
+                "S_distance": 5e-09,
+                "slices": 1,
+                "test": 1,
+                "type": "phase"
+            },
+	    "detector":{
+		"border" : [
+			0,
+			0
+		],
+		"border_float": 1,
+		"upsample": [
+			1,
+			1
+		]
+	    },
+            "decay": [
+                0.4,
+                0,
+                1
+            ],
+            "iterations": 200,
+            "object": {
+                "alpha": 1,
+                "end": -1,
+                "start": 1
+            },
+            "probe": {
+                "alpha": 1,
+                "end": -1,
+                "n": 1,
+                "start": 2
+            },
+            "scan": {
+                "area": [
+                    -1,
+                    -1
+                ],
+                "end": -1,
+                "shift radius": 0.05,
+                "shift trials": 1,
+                "start": -1,
+                "tilt radius": 1,
+                "tilt trials": 1
+            },
+            "source": {
+                "alpha": 1,
+                "end": -1,
+                "start": 1,
+                "sx": 4,
+                "sy": 1
+            }
+        },
+        "common": {
+            "detector": {
+                "bin": [
+                    1,
+                    1
+                ],
+                "crop": [
+                    128,
+                    128
+                ],
+                "mask_flag": 0,
+                "min_max": [
+                    0,
+                    10000
+                ],
+                "name": "merlin_epsic",
+                "optic_axis": [
+                    -1,
+                    -1
+                ],
+                "orientation": "10",
+                "pix_pitch": [
+                    0.00022,
+                    0.00022
+                ]
+            },
+            "object": {
+                "load_flag": 0,
+                "path": "None"
+            },
+            "probe": {
+                "convergence": 0.06348,
+                "load_flag": 0,
+                "path": "/dls/science/groups/imaging/ePSIC_ptychography/experimental_data/80kV_Graphene/Multi_slice_test_0_0_20240315-150221.hdf"
+            },
+            "scan": {
+                "N": [
+                    255,
+                    255
+                ],
+                "dR": [
+                    3.71875e-11,
+                    3.71875e-11
+                ],
+                "fast_axis": 1,
+                "load_flag": 0,
+                "orientation": "11",
+                "path": "None",
+                "region": [
+                    0.55,
+                    0.85,
+                    0.45,
+                    0.75,
+                    1,
+                    1
+                ],
+                "rotation": 59.6,
+                "type": "tv"
+            },
+            "source": {
+                "energy": [
+                    80000.0
+                ],
+                "flux": -1,
+                "radiation": "electron"
+            }
+        },
+        "cores": 4,
+        "gpu_flag": 1,
+        "interaction": "None",
+        "save_dir": "/dls/science/groups/e02/Chris/data/graphene_600C_defocused/single_slice_testing/",
+        "save_interval": 1,
+        "save_prefix": "test",
+        "subset_type": "random"
+    }
+}

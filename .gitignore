@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Runtime outputs
+results/
+reconstructions/
+configs/
+logs/
+
+# Reconstruction products
+*.hdf
+*.h5
+*.nxs
+
+# Optimiser state
+optimizer.pkl
+campaign_state.json
+
+# Stop file
+STOP_AFTER_CURRENT_ITERATION
+
+# Temporary files
+*.tmp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Large exports
+*.png
+*.pdf
+*.csv
+
+# Cluster outputs
+*.out
+*.err
